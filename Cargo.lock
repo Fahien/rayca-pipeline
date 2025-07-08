@@ -1174,7 +1174,7 @@ dependencies = [
 [[package]]
 name = "rayca-core"
 version = "0.1.0"
-source = "git+https://github.com/Fahien/rayca-core#3b46e0051455badcb22aaa545309ace3e1e8adc5"
+source = "git+https://github.com/Fahien/rayca-core#ff5ca8347f68011565e17984fdf6d38a8cbddffc"
 dependencies = [
  "ash",
  "png",

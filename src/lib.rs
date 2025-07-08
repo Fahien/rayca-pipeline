@@ -109,7 +109,7 @@ impl RenderPipeline for PipelineMain {
                 .layout(self.get_layout())
                 .material(primitive.material)
                 .build();
-            self.bind_material_color_and_texture(
+            self.bind_color_and_albedo(
                 &frame.cache.command_buffer,
                 &mut frame.cache.descriptors,
                 image_key,

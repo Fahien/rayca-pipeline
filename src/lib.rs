@@ -20,7 +20,7 @@ impl RenderPipeline for PipelineLine {
         frame.set_viewport_and_scissor(1.0);
 
         for camera_node_handle in camera_nodes.iter().copied() {
-            let camera_node = model.gltf.nodes.get(camera_node_handle).unwrap();
+            let camera_node = model.get_node(camera_node_handle).unwrap();
             let camera_key = DescriptorKey::builder()
                 .layout(self.get_layout())
                 .node(camera_node_handle)
@@ -49,8 +49,8 @@ impl RenderPipeline for PipelineLine {
                     model_buffer,
                 );
 
-                let node = model.gltf.nodes.get(node_handle).unwrap();
-                let mesh = model.gltf.meshes.get(node.mesh).unwrap();
+                let node = model.get_node(node_handle).unwrap();
+                let mesh = model.get_mesh(node.mesh).unwrap();
                 let primitive = model.primitives.get(mesh.primitive.id.into()).unwrap();
                 self.draw(&frame.cache, primitive);
             }
@@ -70,7 +70,7 @@ impl RenderPipeline for PipelineMain {
         frame.set_viewport_and_scissor(1.0);
 
         for camera_node_handle in camera_nodes.iter().copied() {
-            let camera_node = model.gltf.nodes.get(camera_node_handle).unwrap();
+            let camera_node = model.get_node(camera_node_handle).unwrap();
             let camera_key = DescriptorKey::builder()
                 .layout(self.get_layout())
                 .node(camera_node_handle)
@@ -87,10 +87,10 @@ impl RenderPipeline for PipelineMain {
             );
 
             // Supposedly, the material is the same for all nodes
-            let node = model.gltf.nodes.get(nodes[0]).unwrap();
-            let mesh = model.gltf.meshes.get(node.mesh).unwrap();
-            let primitive = model.gltf.primitives.get(mesh.primitive).unwrap();
-            let material = match model.gltf.materials.get(primitive.material) {
+            let node = model.get_node(nodes[0]).unwrap();
+            let mesh = model.get_mesh(node.mesh).unwrap();
+            let primitive = model.get_primitive(mesh.primitive).unwrap();
+            let material = match model.get_material(primitive.material) {
                 Some(material) => material,
                 None => &frame.cache.fallback.white_material,
             };
@@ -120,7 +120,7 @@ impl RenderPipeline for PipelineMain {
             for node_handle in nodes.iter().cloned() {
                 let model_buffer = frame.cache.model_buffers.get(&node_handle).unwrap();
 
-                let node = model.gltf.nodes.get(node_handle).unwrap();
+                let node = model.get_node(node_handle).unwrap();
                 let normal_matrix = camera_node.trs.to_view() * &node.trs;
                 let normal_matrix = Mat4::from(normal_matrix.get_inversed()).get_transpose();
 
@@ -146,7 +146,7 @@ impl RenderPipeline for PipelineMain {
                     normal_matrix_buffer,
                 );
 
-                let mesh = model.gltf.meshes.get(node.mesh).unwrap();
+                let mesh = model.get_mesh(node.mesh).unwrap();
                 let primitive = model.primitives.get(mesh.primitive.id.into()).unwrap();
                 self.draw(&frame.cache, primitive);
             }

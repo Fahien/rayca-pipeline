@@ -1174,7 +1174,7 @@ dependencies = [
 [[package]]
 name = "rayca-core"
 version = "0.1.0"
-source = "git+https://github.com/Fahien/rayca-core#ff5ca8347f68011565e17984fdf6d38a8cbddffc"
+source = "git+https://github.com/Fahien/rayca-core#c8bd617d8972e133b079eb3abe335f396c47f809"
 dependencies = [
  "ash",
  "png",
@@ -1207,7 +1207,7 @@ dependencies = [
 [[package]]
 name = "rayca-math"
 version = "0.1.0"
-source = "git+https://github.com/Fahien/rayca-math#9fc420ec7a7d97362aa375ba3e120c3b1332e17d"
+source = "git+https://github.com/Fahien/rayca-math#0f5163c80f14468374c2bb408d24ea97f2d3ff24"
 dependencies = [
  "num-traits",
  "rand",
@@ -1217,7 +1217,7 @@ dependencies = [
 [[package]]
 name = "rayca-pipe"
 version = "0.0.1"
-source = "git+https://github.com/Fahien/rayca-pipe#f4552197ab325971ab4b2cd1a707094a93c57829"
+source = "git+https://github.com/Fahien/rayca-pipe#db6077529bb77ca8091c420ae20f97cf72d4ba7f"
 dependencies = [
  "proc-macro2",
  "quote",

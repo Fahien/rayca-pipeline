@@ -119,18 +119,33 @@ impl RenderPipeline for PipelineMain {
 
             for node_handle in nodes.iter().cloned() {
                 let model_buffer = frame.cache.model_buffers.get(&node_handle).unwrap();
+
+                let node = model.gltf.nodes.get(node_handle).unwrap();
+                let normal_matrix = camera_node.trs.to_view() * &node.trs;
+                let normal_matrix = Mat4::from(normal_matrix.get_inversed()).get_transpose();
+
+                let normal_matrix_key = NormalMatrixKey {
+                    node: node_handle,
+                    view: camera_node_handle,
+                };
+                let normal_matrix_buffer = frame
+                    .cache
+                    .normal_buffers
+                    .get_or_create::<Mat4>(normal_matrix_key);
+                normal_matrix_buffer.upload(&normal_matrix);
+
                 let model_key = DescriptorKey::builder()
                     .layout(self.get_layout())
                     .node(node_handle)
                     .build();
-                self.bind_model(
+                self.bind_model_and_normal_matrix(
                     &frame.cache.command_buffer,
                     &mut frame.cache.descriptors,
                     model_key,
                     model_buffer,
+                    normal_matrix_buffer,
                 );
 
-                let node = model.gltf.nodes.get(node_handle).unwrap();
                 let mesh = model.gltf.meshes.get(node.mesh).unwrap();
                 let primitive = model.primitives.get(mesh.primitive.id.into()).unwrap();
                 self.draw(&frame.cache, primitive);

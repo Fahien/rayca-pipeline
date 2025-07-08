@@ -2,8 +2,8 @@
 // Author: Antonio Caggiano <info@antoniocaggiano.eu>
 // SPDX-License-Identifier: MIT
 
-pub use rayca_pipe::*;
 pub use rayca_core::*;
+pub use rayca_pipe::*;
 
 pipewriter!(Main, "shaders/main.vert.slang", "shaders/main.frag.slang");
 pipewriter!(Line, "shaders/line.vert.slang", "shaders/line.frag.slang");
@@ -90,8 +90,18 @@ impl RenderPipeline for PipelineMain {
             let node = model.gltf.nodes.get(nodes[0]).unwrap();
             let mesh = model.gltf.meshes.get(node.mesh).unwrap();
             let primitive = model.gltf.primitives.get(mesh.primitive).unwrap();
-            let material = model.gltf.materials.get(primitive.material).unwrap();
-            let texture = model.textures.get(material.texture.id.into()).unwrap();
+            let material = match model.gltf.materials.get(primitive.material) {
+                Some(material) => material,
+                None => &frame.cache.fallback.white_material,
+            };
+            let color_buffer = match frame.cache.material_buffers.get(&primitive.material) {
+                Some(color_buffer) => color_buffer,
+                None => &frame.cache.fallback.white_buffer,
+            };
+            let texture = match model.textures.get(material.texture.id.into()) {
+                Some(texture) => texture,
+                None => &frame.cache.fallback.white_texture,
+            };
             // The problem here is that this is caching descriptor set for index 1
             // with the s key as descriptor set index 1.
             // Need to fix
@@ -99,10 +109,11 @@ impl RenderPipeline for PipelineMain {
                 .layout(self.get_layout())
                 .material(primitive.material)
                 .build();
-            self.bind_texture(
+            self.bind_material_color_and_texture(
                 &frame.cache.command_buffer,
                 &mut frame.cache.descriptors,
                 image_key,
+                color_buffer,
                 texture,
             );
 

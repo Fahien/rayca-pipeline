@@ -19,7 +19,7 @@ impl RenderPipeline for PipelineLine {
         let model = model.as_ref().unwrap();
 
         self.bind(&frame.cache);
-        frame.set_viewport_and_scissor(1.0);
+        frame.set_viewport_and_scissor(1.0, true);
 
         for camera_node_handle in camera_nodes.iter().copied() {
             let camera_node = model.get_node(camera_node_handle).unwrap();
@@ -73,7 +73,7 @@ impl RenderPipeline for PipelineMain {
         let model = model.as_ref().unwrap();
 
         self.bind(&frame.cache);
-        frame.set_viewport_and_scissor(1.0);
+        frame.set_viewport_and_scissor(1.0, true);
 
         for camera_node_handle in camera_nodes.iter().copied() {
             let camera_node = model.get_node(camera_node_handle).unwrap();

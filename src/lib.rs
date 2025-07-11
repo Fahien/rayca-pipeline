@@ -12,10 +12,12 @@ impl RenderPipeline for PipelineLine {
     fn render(
         &self,
         frame: &mut Frame,
-        model: &RenderModel,
+        model: Option<&RenderModel>,
         camera_nodes: &[Handle<Node>],
         nodes: &[Handle<Node>],
     ) {
+        let model = model.as_ref().unwrap();
+
         self.bind(&frame.cache);
         frame.set_viewport_and_scissor(1.0);
 
@@ -62,10 +64,12 @@ impl RenderPipeline for PipelineMain {
     fn render(
         &self,
         frame: &mut Frame,
-        model: &RenderModel,
+        model: Option<&RenderModel>,
         camera_nodes: &[Handle<Node>],
         nodes: &[Handle<Node>],
     ) {
+        let model = model.as_ref().unwrap();
+
         self.bind(&frame.cache);
         frame.set_viewport_and_scissor(1.0);
 

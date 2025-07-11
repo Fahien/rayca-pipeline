@@ -53,8 +53,10 @@ impl RenderPipeline for PipelineLine {
 
                 let node = model.get_node(node_handle).unwrap();
                 let mesh = model.get_mesh(node.mesh).unwrap();
-                let primitive = model.primitives.get(mesh.primitive.id.into()).unwrap();
-                self.draw(&frame.cache, primitive);
+                for primitive_handle in mesh.primitives.iter().copied() {
+                    let primitive = model.primitives.get(primitive_handle.id.into()).unwrap();
+                    self.draw(&frame.cache, primitive);
+                }
             }
         }
     }
@@ -90,37 +92,6 @@ impl RenderPipeline for PipelineMain {
                 proj,
             );
 
-            // Supposedly, the material is the same for all nodes
-            let node = model.get_node(nodes[0]).unwrap();
-            let mesh = model.get_mesh(node.mesh).unwrap();
-            let primitive = model.get_primitive(mesh.primitive).unwrap();
-            let material = match model.get_material(primitive.material) {
-                Some(material) => material,
-                None => &frame.cache.fallback.white_material,
-            };
-            let color_buffer = match frame.cache.material_buffers.get(&primitive.material) {
-                Some(color_buffer) => color_buffer,
-                None => &frame.cache.fallback.white_buffer,
-            };
-            let texture = match model.textures.get(material.texture.id.into()) {
-                Some(texture) => texture,
-                None => &frame.cache.fallback.white_texture,
-            };
-            // The problem here is that this is caching descriptor set for index 1
-            // with the s key as descriptor set index 1.
-            // Need to fix
-            let image_key = DescriptorKey::builder()
-                .layout(self.get_layout())
-                .material(primitive.material)
-                .build();
-            self.bind_color_and_albedo(
-                &frame.cache.command_buffer,
-                &mut frame.cache.descriptors,
-                image_key,
-                color_buffer,
-                texture,
-            );
-
             for node_handle in nodes.iter().cloned() {
                 let model_buffer = frame.cache.model_buffers.get(&node_handle).unwrap();
 
@@ -151,8 +122,37 @@ impl RenderPipeline for PipelineMain {
                 );
 
                 let mesh = model.get_mesh(node.mesh).unwrap();
-                let primitive = model.primitives.get(mesh.primitive.id.into()).unwrap();
-                self.draw(&frame.cache, primitive);
+                for primitive_handle in mesh.primitives.iter().copied() {
+                    let primitive = model.get_primitive(primitive_handle).unwrap();
+                    let material = match model.get_material(primitive.material) {
+                        Some(material) => material,
+                        None => &frame.cache.fallback.white_material,
+                    };
+                    let color_buffer = match frame.cache.material_buffers.get(&primitive.material) {
+                        Some(color_buffer) => color_buffer,
+                        None => &frame.cache.fallback.white_buffer,
+                    };
+                    let albedo = match model.textures.get(material.albedo.id.into()) {
+                        Some(texture) => texture,
+                        None => &frame.cache.fallback.white_texture,
+                    };
+                    // The problem here is that this is caching descriptor set for index 1
+                    // with the s key as descriptor set index 1.
+                    // Need to fix
+                    let image_key = DescriptorKey::builder()
+                        .layout(self.get_layout())
+                        .material(primitive.material)
+                        .build();
+                    self.bind_color_and_albedo(
+                        &frame.cache.command_buffer,
+                        &mut frame.cache.descriptors,
+                        image_key,
+                        color_buffer,
+                        albedo,
+                    );
+                    let primitive = model.primitives.get(primitive_handle.id.into()).unwrap();
+                    self.draw(&frame.cache, primitive);
+                }
             }
         }
     }

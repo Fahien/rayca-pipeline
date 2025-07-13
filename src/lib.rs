@@ -8,6 +8,22 @@ pub use rayca_pipe::*;
 pipewriter!(Main, "shaders/main.vert.slang", "shaders/main.frag.slang");
 pipewriter!(Line, "shaders/line.vert.slang", "shaders/line.frag.slang");
 
+#[repr(C, align(16))]
+struct PushConstant {
+    pretransform: Mat4,
+}
+
+impl AsBytes for PushConstant {
+    fn as_bytes(&self) -> &[u8] {
+        unsafe {
+            std::slice::from_raw_parts(
+                self as *const Self as *const u8,
+                std::mem::size_of::<Self>(),
+            )
+        }
+    }
+}
+
 impl RenderPipeline for PipelineLine {
     fn render(
         &self,
@@ -20,6 +36,13 @@ impl RenderPipeline for PipelineLine {
 
         self.bind(&frame.cache);
         frame.set_viewport_and_scissor(1.0, true);
+
+        // Apply pre-rotation transform
+        let pretransform = Swapchain::get_prerotation_trs(frame.current_transform);
+        let constant = PushConstant {
+            pretransform: pretransform.to_mat4(),
+        };
+        self.push_constant(&frame.cache.command_buffer, &constant);
 
         for camera_node_handle in camera_nodes.iter().copied() {
             let camera_node = model.get_node(camera_node_handle).unwrap();
@@ -74,6 +97,13 @@ impl RenderPipeline for PipelineMain {
 
         self.bind(&frame.cache);
         frame.set_viewport_and_scissor(1.0, true);
+
+        // Apply pre-rotation transform
+        let pretransform = Swapchain::get_prerotation_trs(frame.current_transform);
+        let constant = PushConstant {
+            pretransform: pretransform.to_mat4(),
+        };
+        self.push_constant(&frame.cache.command_buffer, &constant);
 
         for camera_node_handle in camera_nodes.iter().copied() {
             let camera_node = model.get_node(camera_node_handle).unwrap();

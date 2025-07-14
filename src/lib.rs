@@ -30,7 +30,7 @@ impl RenderPipeline for PipelineLine {
         frame: &mut Frame,
         model: Option<&RenderModel>,
         camera_nodes: &[Handle<Node>],
-        nodes: &[Handle<Node>],
+        infos: &[DrawInfo],
     ) {
         let model = model.as_ref().unwrap();
 
@@ -61,11 +61,11 @@ impl RenderPipeline for PipelineLine {
                 proj,
             );
 
-            for node_handle in nodes.iter().cloned() {
-                let model_buffer = frame.cache.model_buffers.get(&node_handle).unwrap();
+            for info in infos {
+                let model_buffer = frame.cache.model_buffers.get(&info.node).unwrap();
                 let model_key = DescriptorKey::builder()
                     .layout(self.get_layout())
-                    .node(node_handle)
+                    .node(info.node)
                     .build();
                 self.bind_model(
                     &frame.cache.command_buffer,
@@ -74,12 +74,8 @@ impl RenderPipeline for PipelineLine {
                     model_buffer,
                 );
 
-                let node = model.get_node(node_handle).unwrap();
-                let mesh = model.get_mesh(node.mesh).unwrap();
-                for primitive_handle in mesh.primitives.iter().copied() {
-                    let primitive = model.primitives.get(primitive_handle.id.into()).unwrap();
-                    self.draw(&frame.cache, primitive);
-                }
+                let primitive = model.primitives.get(info.primitive.id.into()).unwrap();
+                self.draw(&frame.cache, primitive);
             }
         }
     }
@@ -91,7 +87,7 @@ impl RenderPipeline for PipelineMain {
         frame: &mut Frame,
         model: Option<&RenderModel>,
         camera_nodes: &[Handle<Node>],
-        nodes: &[Handle<Node>],
+        infos: &[DrawInfo],
     ) {
         let model = model.as_ref().unwrap();
 
@@ -104,6 +100,35 @@ impl RenderPipeline for PipelineMain {
             pretransform: pretransform.to_mat4(),
         };
         self.push_constant(&frame.cache.command_buffer, &constant);
+
+        // Just get the first primitive for binding the material once.
+        let primitive = model.get_primitive(infos[0].primitive).unwrap();
+        let material = match model.get_material(primitive.material) {
+            Some(material) => material,
+            None => &frame.dev.fallback.white_material,
+        };
+        let color_buffer = match frame.cache.material_buffers.get(&primitive.material) {
+            Some(color_buffer) => color_buffer,
+            None => &frame.dev.fallback.white_buffer,
+        };
+        let albedo = match model.textures.get(material.albedo.id.into()) {
+            Some(texture) => texture,
+            None => &frame.dev.fallback.white_texture,
+        };
+        // The problem here is that this is caching descriptor set for index 1
+        // with the s key as descriptor set index 1.
+        // Need to fix
+        let image_key = DescriptorKey::builder()
+            .layout(self.get_layout())
+            .material(primitive.material)
+            .build();
+        self.bind_color_and_albedo(
+            &frame.cache.command_buffer,
+            &mut frame.cache.descriptors,
+            image_key,
+            color_buffer,
+            albedo,
+        );
 
         for camera_node_handle in camera_nodes.iter().copied() {
             let camera_node = model.get_node(camera_node_handle).unwrap();
@@ -122,15 +147,15 @@ impl RenderPipeline for PipelineMain {
                 proj,
             );
 
-            for node_handle in nodes.iter().cloned() {
-                let model_buffer = frame.cache.model_buffers.get(&node_handle).unwrap();
+            for info in infos {
+                let model_buffer = frame.cache.model_buffers.get(&info.node).unwrap();
 
-                let node = model.get_node(node_handle).unwrap();
+                let node = model.get_node(info.node).unwrap();
                 let normal_matrix = camera_node.trs.to_view() * &node.trs;
                 let normal_matrix = Mat4::from(normal_matrix.get_inversed()).get_transpose();
 
                 let normal_matrix_key = NormalMatrixKey {
-                    node: node_handle,
+                    node: info.node,
                     view: camera_node_handle,
                 };
                 let normal_matrix_buffer = frame
@@ -141,7 +166,7 @@ impl RenderPipeline for PipelineMain {
 
                 let model_key = DescriptorKey::builder()
                     .layout(self.get_layout())
-                    .node(node_handle)
+                    .node(info.node)
                     .build();
                 self.bind_model_and_normal_matrix(
                     &frame.cache.command_buffer,
@@ -151,38 +176,8 @@ impl RenderPipeline for PipelineMain {
                     normal_matrix_buffer,
                 );
 
-                let mesh = model.get_mesh(node.mesh).unwrap();
-                for primitive_handle in mesh.primitives.iter().copied() {
-                    let primitive = model.get_primitive(primitive_handle).unwrap();
-                    let material = match model.get_material(primitive.material) {
-                        Some(material) => material,
-                        None => &frame.dev.fallback.white_material,
-                    };
-                    let color_buffer = match frame.cache.material_buffers.get(&primitive.material) {
-                        Some(color_buffer) => color_buffer,
-                        None => &frame.dev.fallback.white_buffer,
-                    };
-                    let albedo = match model.textures.get(material.albedo.id.into()) {
-                        Some(texture) => texture,
-                        None => &frame.dev.fallback.white_texture,
-                    };
-                    // The problem here is that this is caching descriptor set for index 1
-                    // with the s key as descriptor set index 1.
-                    // Need to fix
-                    let image_key = DescriptorKey::builder()
-                        .layout(self.get_layout())
-                        .material(primitive.material)
-                        .build();
-                    self.bind_color_and_albedo(
-                        &frame.cache.command_buffer,
-                        &mut frame.cache.descriptors,
-                        image_key,
-                        color_buffer,
-                        albedo,
-                    );
-                    let primitive = model.primitives.get(primitive_handle.id.into()).unwrap();
-                    self.draw(&frame.cache, primitive);
-                }
+                let primitive = model.primitives.get(info.primitive.id.into()).unwrap();
+                self.draw(&frame.cache, primitive);
             }
         }
     }

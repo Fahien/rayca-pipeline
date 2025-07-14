@@ -156,15 +156,15 @@ impl RenderPipeline for PipelineMain {
                     let primitive = model.get_primitive(primitive_handle).unwrap();
                     let material = match model.get_material(primitive.material) {
                         Some(material) => material,
-                        None => &frame.dev.fallback.as_ref().unwrap().white_material,
+                        None => &frame.dev.fallback.white_material,
                     };
                     let color_buffer = match frame.cache.material_buffers.get(&primitive.material) {
                         Some(color_buffer) => color_buffer,
-                        None => &frame.dev.fallback.as_ref().unwrap().white_buffer,
+                        None => &frame.dev.fallback.white_buffer,
                     };
                     let albedo = match model.textures.get(material.albedo.id.into()) {
                         Some(texture) => texture,
-                        None => &frame.dev.fallback.as_ref().unwrap().white_texture,
+                        None => &frame.dev.fallback.white_texture,
                     };
                     // The problem here is that this is caching descriptor set for index 1
                     // with the s key as descriptor set index 1.

@@ -8,5 +8,5 @@ license = "MIT"
 readme = "README.md"
 
 [dependencies]
-rayca-core = { git = "https://github.com/Fahien/rayca-core" }
-rayca-pipe = { git = "https://github.com/Fahien/rayca-pipe" }
+rayca-core = { git = "https://github.com/fahien/rayca-core.git" }
+rayca-pipe = { git = "https://github.com/fahien/rayca-pipe.git" }
